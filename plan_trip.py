@@ -2,7 +2,14 @@ import os
 import requests
 
 
-def make_distance_matrix_request():
+def make_distance_matrix_request(origins, destinations, group_by_origins=True):
+    """
+    Make a request to the Google Maps Distance Matrix API.
+    :param origins: string: any valid input for the Distance Matrix API's `origins` parameter
+    :param destinations:  string: any valid input for the Distance Matrix API's `destinations` parameter
+    :param group_by_origins: boolean: if True, the returned dict would have origins as keys, otherwise destinations
+    :return: dict of dict: distances and driving times between each origin and each destination
+    """
     url = "{route}/{resource}/{format}".format(
         route=os.getenv("GOOGLE_MAPS_API_ROUTE"),
         resource="distancematrix",
@@ -10,12 +17,30 @@ def make_distance_matrix_request():
     )
     params = {
         "key": os.getenv("GOOGLE_MAPS_API_KEY"),
-        "origins": "Boston,MA",
-        "destinations": "Charlestown,MA",
+        "origins": origins,
+        "destinations": destinations,
     }
-    r = requests.get(url=url, params=params)
-    print(r.url)
-    print(r.json())
+    r = requests.get(url=url, params=params).json()
+
+    origins = origins.split("|")
+    destinations = destinations.split("|")
+
+    if group_by_origins:
+        distances = {o: {d: None for d in destinations} for o in origins}
+    else:
+        distances = {d: {o: None for o in origins} for d in destinations}
+
+    for row in range(len(r["rows"])):
+        for col in range(2):
+            info = r["rows"][row]["elements"][col]
+            info = {k: info[k] for k in ["distance", "duration"]}
+
+            if group_by_origins:
+                distances[origins[row]][destinations[col]] = info
+            else:
+                distances[destinations[col]][origins[row]] = info
+
+    return distances
 
 
 def find_nearby_airports(latitude, longitude):
@@ -90,11 +115,11 @@ def search_flights(origin, destination, date_from, date_to):
 
 
 def main():
-    # make_distance_matrix_request()
-    # https://www.fareportallabs.com/Document/#divRqAvailableFareSJ
+    r = make_distance_matrix_request("37.6737957,-122.0795195", "Boston,MA|Charlestown,MA", group_by_origins=False)
+    print(r)
 
-    search_flights(origin="SFO", destination="LAX", date_from="14/03/2019", date_to="14/03/2019")
     # find_nearby_airports(latitude=37.6737957, longitude=-122.0795195)
+    # search_flights(origin="SFO", destination="LAX", date_from="14/03/2019", date_to="14/03/2019")
 
 
 if __name__ == "__main__":
