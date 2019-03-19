@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 requests = "*"
+pandas = "*"
+structlog = "*"
 
 [dev-packages]
 
