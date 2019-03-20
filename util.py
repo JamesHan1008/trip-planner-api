@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 
@@ -5,6 +6,8 @@ import structlog
 
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
+
+GAS_COST_PER_GALLON = None
 
 
 def get_seconds_from_duration_string(duration_string, duration_format):
@@ -39,6 +42,81 @@ def get_duration_string_from_seconds(duration_seconds, duration_format):
         msg = "unsupported format"
         logger.error(msg, format=duration_format)
         raise Exception(msg)
+
+
+def get_distance_string_from_meters(distance_meters, distance_format):
+    """
+    Create the human-readable string representation of the distance given in meters
+    :param distance_meters: int: distance in meters
+    :param distance_format: string: format string for the distance
+    :return: string: human-readable string of the distance
+    """
+    try:
+        km = distance_meters // 1000
+        return distance_format.format(km=km)
+    except KeyError:
+        msg = "unsupported format"
+        logger.error(msg, format=distance_format)
+        raise Exception(msg)
+
+
+def get_gas_cost(distance_meters, latitude, longitude):
+    """
+    Estimate the gas cost for driving the given distance by using an average fuel consumption and the current gas price
+    :param distance_meters: int: distance in meters
+    :param latitude: float: latitude of the origin
+    :param longitude: float: longitude of the origin
+    :return: int: gas cost in U.S. dollars
+    """
+    global GAS_COST_PER_GALLON
+
+    liters_per_meter = 0.0001
+    liters_used = distance_meters * liters_per_meter
+    cost_per_liter = 0.75
+    cost_per_gallon = None
+
+    if GAS_COST_PER_GALLON is None:
+        url = "{route}/{latitude}/{longitude}/{distance}/{fuel_type}/{sort_by}/{apikey}.json?".format(
+            route=os.getenv("MYGASFEED_API_ROUTE_DEV"),
+            latitude=latitude,
+            longitude=longitude,
+            distance=50,
+            fuel_type="reg",
+            sort_by="distance",
+            apikey=os.getenv("MYGASFEED_API_KEY_DEV"),
+        )
+        headers = {"Accept": "application/json"}
+
+        try:
+            r = requests.get(url=url, headers=headers).text
+            json_begin = r.find("{\"status\":")
+            r = r[json_begin:]
+            r = json.loads(r)
+
+            if r["status"]["code"] == 200:
+                if len(r["stations"]) == 0:
+                    logger.info("nearby gas prices not found, use default gas cost per liter: {}".format(cost_per_liter))
+                else:
+                    cost_per_gallon = float(r["stations"][0]["reg_price"])
+                    logger.info("gas price found through myGasFeed", cost_per_gallon=cost_per_gallon)
+                    GAS_COST_PER_GALLON = cost_per_gallon
+            else:
+                logger.error("myGasFeed responded with bad status code",
+                             status_code=r["status"]["code"],
+                             default_cost_per_liter=cost_per_liter,
+                             url=url)
+        except Exception as e:
+            logger.error("myGasFeed request error",
+                         default_cost_per_liter=cost_per_liter,
+                         url=url,
+                         exception=e)
+    else:
+        cost_per_gallon = GAS_COST_PER_GALLON
+
+    if cost_per_gallon:
+        cost_per_liter = cost_per_gallon / 3.78541
+
+    return liters_used * cost_per_liter
 
 
 def make_distance_matrix_request(origins, destinations, origin_labels, destination_labels, group_by_origins):

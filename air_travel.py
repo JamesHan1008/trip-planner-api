@@ -1,8 +1,15 @@
+import os
+import requests
+
 import structlog
 
 import pandas as pd
 
-from util import *
+from util import get_seconds_from_duration_string
+from util import get_duration_string_from_seconds
+from util import get_distance_string_from_meters
+from util import get_gas_cost
+from util import make_distance_matrix_request
 
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
@@ -147,6 +154,15 @@ def get_all_air_travel_options(origin_lat, origin_lon, destination_lat, destinat
             duration_to_airport = travel_to_airports[origin_airport]["duration"]["value"]
             duration_from_airport = travel_from_airports[destination_airport]["duration"]["value"]
 
+            distance_to_airport = travel_to_airports[origin_airport]["distance"]["value"]
+            distance_from_airport = travel_from_airports[destination_airport]["distance"]["value"]
+            total_driving_distance = distance_to_airport + distance_from_airport
+            gas_cost = get_gas_cost(
+                distance_meters=total_driving_distance,
+                latitude=origin_lat,
+                longitude=origin_lon,
+            )
+
             flights = _search_flights(
                 origin=origin_airport,
                 destination=destination_airport,
@@ -167,8 +183,12 @@ def get_all_air_travel_options(origin_lat, origin_lon, destination_lat, destinat
                     "destination_airport": destination_airport,
                     "travel_time": get_duration_string_from_seconds(duration, "{hours}h {minutes}m"),
                     "travel_time_seconds": duration,
+                    "driving_distance": get_distance_string_from_meters(total_driving_distance, "{km} km"),
+                    "driving_distance_meters": total_driving_distance,
                     "airlines": flight_info["airlines"],
-                    "price": flight_info["price"],
+                    "flight_cost": flight_info["price"],
+                    "gas_cost": gas_cost,
+                    "total_cost": flight_info["price"] + gas_cost,
                     "travel_method": "flight",
                 })
 
