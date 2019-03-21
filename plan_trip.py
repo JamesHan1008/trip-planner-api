@@ -1,3 +1,5 @@
+import json
+
 import structlog
 
 from air_travel import get_all_air_travel_options
@@ -46,8 +48,10 @@ def analyze_travel_option(trip_params, traveler_params):
         value_one_hour=traveler_params["value_one_hour"],
         value_ten_hours=traveler_params["value_ten_hours"],
     )
+    ordered_travel_options = all_travel_options.sort_values(by=["equivalent_travel_cost"])
+    ordered_travel_options = ordered_travel_options.reset_index(drop=True)
 
-    return all_travel_options
+    return ordered_travel_options
 
 
 def main():
@@ -63,8 +67,11 @@ def main():
         "value_ten_hours": 150,
     }
 
-    ordered_travel_options = analyze_travel_option(trip_params, traveler_params)
-    ordered_travel_options.to_csv("travel_options.csv")
+    # ordered_travel_options = analyze_travel_option(trip_params, traveler_params)
+
+    with open("fixtures/travel_options.json", "r") as f:
+        payload = json.load(f)
+    print(payload)
 
 
 if __name__ == "__main__":
