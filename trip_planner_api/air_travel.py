@@ -5,11 +5,11 @@ import structlog
 
 import pandas as pd
 
-from util import get_seconds_from_duration_string
-from util import get_duration_string_from_seconds
-from util import get_distance_string_from_meters
-from util import get_gas_cost
-from util import make_distance_matrix_request
+from trip_planner_api.util import get_seconds_from_duration_string
+from trip_planner_api.util import get_duration_string_from_seconds
+from trip_planner_api.util import get_distance_string_from_meters
+from trip_planner_api.util import get_gas_cost
+from trip_planner_api.util import make_distance_matrix_request
 
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])

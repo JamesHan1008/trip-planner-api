@@ -7,6 +7,8 @@ name = "pypi"
 requests = "*"
 pandas = "*"
 structlog = "*"
+falcon = "*"
+gunicorn = "*"
 
 [dev-packages]
 

@@ -107,4 +107,4 @@ venv.bak/
 .idea/
 
 # Output
-travel_options.csv
+fixtures/

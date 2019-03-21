@@ -2,9 +2,9 @@ import json
 
 import structlog
 
-from air_travel import get_all_air_travel_options
-from ground_travel import get_all_ground_travel_options
-from options_analysis import add_equivalent_travel_cost
+from trip_planner_api.air_travel import get_all_air_travel_options
+from trip_planner_api.ground_travel import get_all_ground_travel_options
+from trip_planner_api.options_analysis import add_equivalent_travel_cost
 
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
@@ -25,6 +25,13 @@ def analyze_travel_option(trip_params, traveler_params):
     :return: pandas.DataFrame: each row is a travel option, and each column is some information about the travel option.
         Ordered by a best guess of the traveler's preferences.
     """
+    # XXXX
+    print("_________________")
+    with open("trip_planner_api/fixtures/travel_options.json", "r") as f:
+        payload = json.load(f)
+    return payload
+    # XXXX
+
     logger.info("finding all travel options")
     air_travel_options = get_all_air_travel_options(
         origin_lat=trip_params["origin_lat"],
@@ -55,6 +62,7 @@ def analyze_travel_option(trip_params, traveler_params):
 
 
 def main():
+    """
     trip_params = {
         "origin_lat": 37.6737957,
         "origin_lon": -122.0795195,
@@ -67,7 +75,9 @@ def main():
         "value_ten_hours": 150,
     }
 
-    # ordered_travel_options = analyze_travel_option(trip_params, traveler_params)
+    ordered_travel_options = analyze_travel_option(trip_params, traveler_params)
+    ordered_travel_options.to_json("fixtures/travel_options.json", orient="index")
+    """
 
     with open("fixtures/travel_options.json", "r") as f:
         payload = json.load(f)
