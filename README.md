@@ -3,7 +3,8 @@
 ## Local Testing
 1. Open up terminal and navigate to the root directory of `trip-planner-api`
 2. $ pipenv shell
-3. $ gunicorn --reload trip_planner_api.app
+3. $ gunicorn --reload trip_planner_api.app --timeout 180
+- Leave at least 3 minutes to ensure the API does not timeout
 4. Open up another terminal
 - Health check: $ http localhost:8000/health
 - Get travel options: $ http localhost:8000/travel origin_lat==37.6737957 origin_lon==-122.0795195

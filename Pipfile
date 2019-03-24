@@ -9,6 +9,7 @@ pandas = "*"
 structlog = "*"
 falcon = "*"
 gunicorn = "*"
+simplejson = "*"
 
 [dev-packages]
 
