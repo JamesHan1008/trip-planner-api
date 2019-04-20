@@ -1,7 +1,9 @@
+import os
+
 import falcon
 from falcon.http_status import HTTPStatus
 
-ALLOWED_ORIGINS = ["http://localhost:3000"]
+ALLOWED_ORIGINS = eval(os.getenv("ALLOWED_ORIGINS", ["http://localhost:3000"]))
 
 
 class HandleCORS(object):

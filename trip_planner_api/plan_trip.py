@@ -48,13 +48,14 @@ def analyze_travel_option(trip_params, traveler_params):
     )
     ordered_travel_options = all_travel_options.sort_values(by=["equivalent_travel_cost"])
     ordered_travel_options = ordered_travel_options.reset_index(drop=True)
+    ordered_travel_options["rank"] = ordered_travel_options.index
 
     return ordered_travel_options
 
 
 def main():
     """ Command line entry point for local testing """
-    create_new_fixture = False
+    create_new_fixture = True
 
     logger.info("CLI invocation")
     trip_params = {
@@ -72,7 +73,7 @@ def main():
     ordered_travel_options = analyze_travel_option(trip_params, traveler_params)
 
     if create_new_fixture:
-        ordered_travel_options.to_json("fixtures/travel_options.json", orient="index", indent=4)
+        ordered_travel_options.to_json("trip_planner_api/fixtures/travel_options.json", orient="records")
     else:
         print(ordered_travel_options)
 
